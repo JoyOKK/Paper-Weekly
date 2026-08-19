@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AnyMo · Paper Weekly</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1c1917; --muted: #57534e; --line: #d6d3d1; --paper: #faf8f5;
+      --card: #ffffff; --accent: #0f4c4a; --accent-soft: #e7f1f0;
+      --accent-2: #9a3412; --root: #b45309; --body: #1d4ed8; --goal: #be123c; --ok: #166534;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--paper); color: var(--ink); }
+    body { font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif; overflow: hidden; }
+    .deck { height: 100%; }
+    .slide { display: none; height: 100%; padding: 48px 64px 68px; flex-direction: column; overflow: auto; }
+    .slide.active { display: flex; }
+    .kicker { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+    h1 { font-family: "Noto Serif SC", serif; font-size: 34px; line-height: 1.28; font-weight: 700; max-width: 22em; }
+    h2 { font-family: "Noto Serif SC", serif; font-size: 26px; line-height: 1.3; margin-bottom: 16px; }
+    p, li { font-size: 16px; line-height: 1.55; }
+    .sub { margin-top: 12px; font-size: 16px; color: var(--muted); max-width: 52em; }
+    .meta { margin-top: 20px; font-size: 15px; color: var(--muted); }
+    .meta a { color: var(--accent); }
+    ul { padding-left: 1.15em; }
+    li + li { margin-top: 6px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { background: var(--card); border: 1px solid var(--line); padding: 14px 16px; }
+    .card h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+    .card p, .card li { font-size: 14px; }
+    .fig { background: var(--card); border: 1px solid var(--line); padding: 12px 14px 8px; margin: 8px 0 4px; }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .caption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    pre, .code {
+      background: #1c1917; color: #f5f5f4;
+      font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+      font-size: 13px; line-height: 1.55; padding: 14px 16px; overflow: auto;
+    }
+    .code .cm { color: #a8a29e; } .code .kw { color: #5eead4; }
+    .code .fn { color: #93c5fd; } .code .st { color: #fcd34d; } .code .nu { color: #fdba74; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+    td.num { font-variant-numeric: tabular-nums; font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+    tr.hi td { background: var(--accent-soft); font-weight: 600; }
+    .yes { color: var(--ok); font-weight: 600; } .no { color: var(--accent-2); }
+    .bars { display: flex; flex-direction: column; gap: 8px; }
+    .bar-row { display: grid; grid-template-columns: 110px 1fr 72px; gap: 8px; align-items: center; font-size: 13px; }
+    .bar-track { height: 10px; background: #e7e5e4; }
+    .bar-fill { height: 100%; background: var(--accent); }
+    .bar-fill.warn { background: var(--accent-2); }
+    .bar-val { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); text-align: right; }
+    .footer { position: fixed; left: 64px; right: 64px; bottom: 18px; display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .progress { position: fixed; left: 0; right: 0; top: 0; height: 3px; background: var(--line); }
+    .progress > span { display: block; height: 100%; background: var(--accent); width: 0%; }
+    .small { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 18px; }
+    @media (max-width: 900px) {
+      .slide { padding: 28px 20px 60px; }
+      h1 { font-size: 24px; } h2 { font-size: 20px; }
+      .grid, .grid-3, .cols { grid-template-columns: 1fr; }
+      .footer { left: 20px; right: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress"><span id="bar"></span></div>
+  <div class="deck">
+
+    <section class="slide active">
+      <div class="kicker">Paper Weekly · 2026-08-17 ~ 08-23</div>
+      <h1>AnyMo：任意模态组合条件下的可缩放掩码动作生成</h1>
+      <p class="sub">Scaling Any-Modality Conditional Motion Generation with Masked Modeling · Arxiv 2026</p>
+      <div class="fig" style="margin-top:16px">
+        <svg viewBox="0 0 980 150" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="28" width="88" height="56" fill="#e7f1f0" stroke="#0f4c4a"/><text x="52" y="52" text-anchor="middle" font-size="12">文本</text><text x="52" y="70" text-anchor="middle" font-size="11" fill="#57534e">T5-XL</text>
+          <rect x="104" y="28" width="88" height="56" fill="#e7f1f0" stroke="#0f4c4a"/><text x="148" y="52" text-anchor="middle" font-size="12">语音/音乐</text><text x="148" y="70" text-anchor="middle" font-size="11" fill="#57534e">WavTok</text>
+          <rect x="200" y="28" width="88" height="56" fill="#e7f1f0" stroke="#0f4c4a"/><text x="244" y="52" text-anchor="middle" font-size="12">轨迹</text><text x="244" y="70" text-anchor="middle" font-size="11" fill="#57534e">Conv</text>
+          <text x="148" y="106" text-anchor="middle" font-size="11" fill="#57534e">任意组合</text>
+          <path d="M296 56 H328" stroke="#0f4c4a"/><polygon points="328,52 336,56 328,60" fill="#0f4c4a"/>
+          <rect x="340" y="20" width="220" height="72" fill="#fff" stroke="#0f4c4a"/>
+          <text x="450" y="48" text-anchor="middle" font-size="13">并行掩码 Transformer</text>
+          <text x="450" y="70" text-anchor="middle" font-size="12" fill="#57534e">LLaMA · 111M–3B</text>
+          <path d="M568 56 H600" stroke="#0f4c4a"/><polygon points="600,52 608,56 600,60" fill="#0f4c4a"/>
+          <rect x="612" y="20" width="160" height="72" fill="#eff6ff" stroke="#1d4ed8"/>
+          <text x="692" y="48" text-anchor="middle" font-size="13" fill="#1d4ed8">R-FSQ tokens</text>
+          <text x="692" y="70" text-anchor="middle" font-size="11" fill="#57534e">4 层残差流</text>
+          <path d="M780 56 H812" stroke="#0f4c4a"/><polygon points="812,52 820,56 812,60" fill="#0f4c4a"/>
+          <rect x="824" y="28" width="140" height="56" fill="#fff7ed" stroke="#b45309"/>
+          <text x="894" y="62" text-anchor="middle" font-size="13" fill="#b45309">3D 动作</text>
+          <text x="490" y="138" text-anchor="middle" font-size="12" fill="#57534e">数据底座 OmniHuMo：3.2M 序列 · 5048h · 文本全覆盖 · ~500h 音视频对齐</text>
+        </svg>
+        <p class="caption">图 1 · 一句话：大规模对齐数据 + 多层残差 token + 并行掩码，让文本 / 语音 / 音乐 / 轨迹可以任意组合条件生成。</p>
+      </div>
+      <p class="meta">
+        Li / Li / Hou / Chen / Chang / Liu / Shan · ICT CAS · UCAS · PKU<br />
+        <a href="https://arxiv.org/abs/2605.29488">arXiv:2605.29488</a> ·
+        <a href="https://nanless.github.io/audio-paper-digest-blog/posts/2026-06-02-anymo-scaling-any-modality-conditional-motion/">解读</a>
+        · 代码与 OmniHuMo 未开源
+        <span class="hint">方向键 / 空格翻页</span>
+      </p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">阅读提纲</div>
+      <h2>对应本周 paper_.md 的四个字段</h2>
+      <div class="grid" style="grid-template-columns: repeat(4, 1fr)">
+        <div class="card"><h3>01 挑战</h3><p>缺大规模模态对齐数据；现有方法多任务但单输入，吃不下任意组合。</p></div>
+        <div class="card"><h3>02 Idea</h3><p>先把数据集做大做齐，再用 R-FSQ 多层 token + 并行掩码一次预测所有流。</p></div>
+        <div class="card"><h3>03 方法</h3><p>OmniHuMo 流水线、R-FSQ、模态编码器、三阶段课程。下文用图和代码展开。</p></div>
+        <div class="card"><h3>04 结果</h3><p>文本任务明显随规模变好；音频 FID 在 775M 后波动；组合条件能再压误差。</p></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">问题</div>
+      <h2>不是缺生成器，是缺「对齐」和「组合」</h2>
+      <div class="cols">
+        <div>
+          <ul>
+            <li>文本、音乐、语音、轨迹各自都有不错的单模态方法。</li>
+            <li>多数「统一框架」其实是一个 backbone 挂多个单模态任务，不能对<strong>同一段动作同时吃多种条件</strong>。</li>
+            <li>跨模态交互和 multimodal scaling law 几乎没人系统做过，根因是对齐数据太少。</li>
+          </ul>
+        </div>
+        <div class="fig">
+          <svg viewBox="0 0 440 190" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="10" width="200" height="170" fill="#fff" stroke="#d6d3d1"/>
+            <text x="110" y="36" text-anchor="middle" font-size="13" fill="#9a3412">MULTI-TASK / SINGLE-IN</text>
+            <rect x="28" y="52" width="70" height="28" fill="#e7e5e4"/><text x="63" y="70" text-anchor="middle" font-size="11">文本</text>
+            <rect x="108" y="52" width="70" height="28" fill="#e7e5e4"/><text x="143" y="70" text-anchor="middle" font-size="11">音频</text>
+            <text x="110" y="108" text-anchor="middle" font-size="12">各自一条任务头</text>
+            <text x="110" y="148" text-anchor="middle" font-size="11" fill="#57534e">不能同时条件化</text>
+            <rect x="230" y="10" width="200" height="170" fill="#fff" stroke="#0f4c4a"/>
+            <text x="330" y="36" text-anchor="middle" font-size="13" fill="#0f4c4a">ANYMO</text>
+            <rect x="248" y="52" width="50" height="28" fill="#e7f1f0" stroke="#0f4c4a"/><text x="273" y="70" text-anchor="middle" font-size="11">T</text>
+            <rect x="304" y="52" width="50" height="28" fill="#e7f1f0" stroke="#0f4c4a"/><text x="329" y="70" text-anchor="middle" font-size="11">A</text>
+            <rect x="360" y="52" width="50" height="28" fill="#e7f1f0" stroke="#0f4c4a"/><text x="385" y="70" text-anchor="middle" font-size="11">Traj</text>
+            <text x="330" y="108" text-anchor="middle" font-size="12">同一序列、任意子集</text>
+            <text x="330" y="148" text-anchor="middle" font-size="11" fill="#57534e">显式建模跨模态依赖</text>
+          </svg>
+          <p class="caption">图 2 · 论文批评的范式：多任务 ≠ 任意组合条件。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">数据 · Table 1</div>
+      <h2>OmniHuMo 要补的是规模 + 对齐模态</h2>
+      <table>
+        <thead>
+          <tr><th>数据集</th><th>条数</th><th>时长</th><th>来源</th><th>文本</th><th>语音</th><th>音乐</th><th>RGB</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>BEATv2</td><td class="num">1.8K</td><td class="num">60h</td><td>Marker</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td></tr>
+          <tr><td>HumanML3D</td><td class="num">14.6K</td><td class="num">28.6h</td><td>Marker</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+          <tr><td>Motion-X++</td><td class="num">120K</td><td class="num">181h</td><td>聚合 / 单目</td><td class="yes">✓</td><td class="no">✗</td><td class="yes">✓</td><td class="no">✗</td></tr>
+          <tr><td>MotionMillion</td><td class="num">2M</td><td class="num">2000h</td><td>聚合 / 单目</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+          <tr class="hi"><td>OmniHuMo</td><td class="num">3.2M</td><td class="num">5048h</td><td>单目网络视频</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        </tbody>
+      </table>
+      <p class="small">文本覆盖全部序列（每条 1–3 句）；语音 / 音乐对齐大约 500h，只占约 1/10。这直接决定后面必须上三阶段课程，而不能假设所有模态都成对。</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">数据 · 流水线</div>
+      <h2>从 2 亿视频到对齐动作：五段自动标注</h2>
+      <div class="fig">
+        <svg viewBox="0 0 980 200" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="24" width="168" height="88" fill="#fff" stroke="#0f4c4a"/>
+          <text x="92" y="52" text-anchor="middle" font-size="13">1. Video Curation</text>
+          <text x="92" y="74" text-anchor="middle" font-size="11" fill="#57534e">场景切分 + 质量过滤</text>
+          <text x="92" y="94" text-anchor="middle" font-size="11" fill="#57534e">PySceneDetect / TransNetV2</text>
+          <path d="M180 68 H204" stroke="#0f4c4a"/><polygon points="204,64 212,68 204,72" fill="#0f4c4a"/>
+          <rect x="216" y="24" width="168" height="88" fill="#fff" stroke="#0f4c4a"/>
+          <text x="300" y="52" text-anchor="middle" font-size="13">2. 2D 人体</text>
+          <text x="300" y="74" text-anchor="middle" font-size="11" fill="#57534e">YOLO · MOTRv2 · RTMW</text>
+          <text x="300" y="94" text-anchor="middle" font-size="11" fill="#57534e">时长 / 模糊 / 置信度过滤</text>
+          <path d="M388 68 H412" stroke="#0f4c4a"/><polygon points="412,64 420,68 412,72" fill="#0f4c4a"/>
+          <rect x="424" y="24" width="168" height="88" fill="#fff" stroke="#0f4c4a"/>
+          <text x="508" y="52" text-anchor="middle" font-size="13">3. 3D 重建</text>
+          <text x="508" y="74" text-anchor="middle" font-size="11" fill="#57534e">GVHMR → SMPL</text>
+          <text x="508" y="94" text-anchor="middle" font-size="11" fill="#57534e">滤掉 root 突变 / 关节抖动</text>
+          <path d="M596 68 H620" stroke="#0f4c4a"/><polygon points="620,64 628,68 620,72" fill="#0f4c4a"/>
+          <rect x="632" y="24" width="160" height="88" fill="#fff7ed" stroke="#b45309"/>
+          <text x="712" y="52" text-anchor="middle" font-size="13">4. 音频</text>
+          <text x="712" y="74" text-anchor="middle" font-size="11" fill="#57534e">Demucs 人声/伴奏</text>
+          <text x="712" y="94" text-anchor="middle" font-size="11" fill="#57534e">BAS / SyncNet / Whisper</text>
+          <path d="M796 68 H820" stroke="#0f4c4a"/><polygon points="820,64 828,68 820,72" fill="#0f4c4a"/>
+          <rect x="832" y="24" width="140" height="88" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="902" y="52" text-anchor="middle" font-size="13">5. 文本</text>
+          <text x="902" y="74" text-anchor="middle" font-size="11" fill="#57534e">Qwen3-VL-32B</text>
+          <text x="902" y="94" text-anchor="middle" font-size="11" fill="#57534e">框内细粒度描述</text>
+          <text x="490" y="148" text-anchor="middle" font-size="12" fill="#57534e">舞蹈：BAS &gt; 0.15 才留 · 语音：说话人跟踪 + 唇音同步 + 转写有内容才留</text>
+          <text x="490" y="172" text-anchor="middle" font-size="12" fill="#57534e">多数片段 2–10s，适合原子动作和快速转换。标注全自动，论文没有人工质检报告。</text>
+        </svg>
+        <p class="caption">图 3 · OmniHuMo 构建流程（论文 Fig.2）。工程贡献的主体在这里，不在生成器公式。</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">核心 Idea</div>
+      <h2>多层残差 token 并行 mask，而不是 flatten 再自回归</h2>
+      <div class="cols">
+        <div>
+          <p>FSQ 比 VQ 稳，但单级仍丢细节。R-FSQ 让第 0 流管全局，后面几流管残差，重建误差逐级降。</p>
+          <p style="margin-top:10px">多流若拼成一条长序列再 AR，时间和层级都乱。AnyMo 在同一时间步把所有层一起 mask、一起预测。</p>
+        </div>
+        <pre class="code"><span class="cm"># 论文 Eq.2–4  残差量化 + 并行嵌入</span>
+R = Z
+<span class="kw">for</span> v <span class="kw">in</span> range(V+<span class="nu">1</span>):
+    Z_hat[v] = FSQ(R)
+    R = R - Z_hat[v]
+Z_q = sum(Z_hat)                 <span class="cm"># 解码用</span>
+m[v] = to_code(Z_hat[v])         <span class="cm"># 生成用</span>
+
+Z_enc = sum(Embd[v](mask(m[v]))) <span class="cm"># 不 flatten</span></pre>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">贡献</div>
+      <h2>三条：数据、分词、可缩放生成器</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>C1 · OmniHuMo</h3>
+          <p>3.2M / 5048h，文本全覆盖，~500h 语音或音乐对齐，带 RGB。作者称是目前最大的文本–音频–视觉一体动作集。</p>
+        </div>
+        <div class="card">
+          <h3>C2 · R-FSQ</h3>
+          <p>4 层残差 FSQ，每层码本 2048，时间下采样 4。HumanML3D 重建 MPJPE 27.9 mm，优于 ScaMo / GoToZero。</p>
+        </div>
+        <div class="card">
+          <h3>C3 · AnyMo + scaling</h3>
+          <p>LLaMA 双向掩码，111M→3B。文本 FID 262→55.6；任意组合靠模态编码器和三阶段课程，不靠测试时优化。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">方法 · 总览</div>
+      <h2>先冻 tokenizer，再训掩码 Transformer</h2>
+      <div class="fig">
+        <svg viewBox="0 0 980 210" xmlns="http://www.w3.org/2000/svg">
+          <text x="8" y="20" font-size="12" fill="#57534e">STAGE A · R-FSQ TOKENIZER</text>
+          <rect x="8" y="32" width="110" height="52" fill="#fff" stroke="#1d4ed8"/><text x="63" y="64" text-anchor="middle" font-size="12" fill="#1d4ed8">X ∈ R^{T×D}</text>
+          <path d="M122 58 H146" stroke="#0f4c4a"/><polygon points="146,54 154,58 146,62" fill="#0f4c4a"/>
+          <rect x="158" y="32" width="90" height="52" fill="#eff6ff" stroke="#1d4ed8"/><text x="203" y="64" text-anchor="middle" font-size="12">Enc ↓4</text>
+          <path d="M252 58 H276" stroke="#0f4c4a"/><polygon points="276,54 284,58 276,62" fill="#0f4c4a"/>
+          <rect x="288" y="24" width="70" height="28" fill="#e7f1f0" stroke="#0f4c4a"/><text x="323" y="43" text-anchor="middle" font-size="11">FSQ0</text>
+          <rect x="288" y="56" width="70" height="28" fill="#e7f1f0" stroke="#0f4c4a"/><text x="323" y="75" text-anchor="middle" font-size="11">FSQ1–3</text>
+          <path d="M362 58 H386" stroke="#0f4c4a"/><polygon points="386,54 394,58 386,62" fill="#0f4c4a"/>
+          <rect x="398" y="32" width="130" height="52" fill="#fff" stroke="#0f4c4a"/><text x="463" y="64" text-anchor="middle" font-size="12">m⁰…m³ 四流</text>
+          <text x="8" y="118" font-size="12" fill="#57534e">STAGE B · MASKED TRANSFORMER</text>
+          <rect x="8" y="132" width="150" height="56" fill="#fff" stroke="#0f4c4a"/><text x="83" y="156" text-anchor="middle" font-size="11">T5 / WavTok / Conv</text><text x="83" y="174" text-anchor="middle" font-size="11" fill="#57534e">投影到 c 维</text>
+          <path d="M162 160 H186" stroke="#0f4c4a"/><polygon points="186,156 194,160 186,164" fill="#0f4c4a"/>
+          <rect x="198" y="132" width="200" height="56" fill="#e7f1f0" stroke="#0f4c4a"/><text x="298" y="156" text-anchor="middle" font-size="12">同一时间步全层 mask</text><text x="298" y="174" text-anchor="middle" font-size="11" fill="#57534e">Σ Embdᵛ → LLaMA</text>
+          <path d="M402 160 H426" stroke="#0f4c4a"/><polygon points="426,156 434,160 426,164" fill="#0f4c4a"/>
+          <rect x="438" y="132" width="200" height="56" fill="#fff" stroke="#0f4c4a"/><text x="538" y="156" text-anchor="middle" font-size="12">V+1 个独立 FFN 头</text><text x="538" y="174" text-anchor="middle" font-size="11" fill="#57534e">并行预测各残差流</text>
+          <path d="M642 160 H666" stroke="#0f4c4a"/><polygon points="666,156 674,160 666,164" fill="#0f4c4a"/>
+          <rect x="678" y="132" width="280" height="56" fill="#fff7ed" stroke="#b45309"/><text x="818" y="156" text-anchor="middle" font-size="12">Σ Ẑᵛ → Decoder → 动作</text><text x="818" y="174" text-anchor="middle" font-size="11" fill="#57534e">双向注意，非自回归</text>
+        </svg>
+        <p class="caption">图 4 · 论文 Fig.6。Tokenizer 和生成器分开训；生成侧不 flatten 多流。</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">方法 · R-FSQ</div>
+      <h2>确定性标量量化 + 残差，替代最近邻 VQ</h2>
+      <div class="cols">
+        <div>
+          <ul>
+            <li>VQ 两个病：不可微最近邻 → 码本崩；单级压缩 → 细节没了。</li>
+            <li>FSQ：sigmoid 把每维限制住，再 round 到 L<sub>i</sub> 档。码本大小是各维档数的乘积，不靠学习 codebook。</li>
+            <li>残差：R⁰=Z，每层量化残差。m⁰ 管全局，高层管动态细节。</li>
+            <li>实现：4 层、每层 2048、↓4，Enc/Dec 跟 SnapMoGen。16×H20，200 epoch，bs 256/卡，lr 2e-4。</li>
+          </ul>
+        </div>
+        <pre class="code"><span class="cm"># 论文 Eq.1, Eq.3</span>
+hat_z_i = round(sigmoid(z_i) * (L_i - <span class="nu">1</span>))
+|C| = prod(L)                      <span class="cm"># 双射展平</span>
+
+L1 = ||X - D(sum_v FSQ(R^v))||^2   <span class="cm"># 只重建，无对抗</span></pre>
+        <p class="small">消融：HumanML3D 上训 tokenizer，数据从 0.05M→3M，FID 160.7→17.3，MPJPE 94.6→27.9。规模几乎就是重建质量。</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">方法 · 并行掩码</div>
+      <h2>同一时间步，所有残差层一起盖、一起猜</h2>
+      <pre class="code"><span class="kw">def</span> <span class="fn">parallel_mask_step</span>(tokens, cond):
+    <span class="cm"># tokens[v]: 第 v 层离散序列，长度 t</span>
+    idx = sample_timesteps()                 <span class="cm"># 所有层共用</span>
+    masked = [replace(tokens[v], idx, MASK) <span class="kw">for</span> v <span class="kw">in</span> streams]
+    Z_enc = sum(Embd[v](masked[v]) <span class="kw">for</span> v)
+    h = llama_bidirectional(Z_enc, cond)     <span class="cm"># text/audio/traj</span>
+    logits = [FFN[v](h) <span class="kw">for</span> v]
+    L2 = -sum(CE(logits[v], tokens[v]) <span class="kw">for</span> v)
+    <span class="kw">return</span> L2</pre>
+      <p class="small">条件：T5-XL 文本、WavTokenizer 音频、轻量卷积轨迹，都投到同一 c 维。HumanML3D 上建模策略消融：AR-Flatten FID 26.71 · Mask-Flatten 20.89 · <strong>Mask-Parallel 19.46</strong>。并行不只更快，质量也最好。</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">方法 · 课程</div>
+      <h2>对齐数据只有约 1/10，所以分三阶段灌</h2>
+      <div class="fig">
+        <svg viewBox="0 0 980 140" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="24" width="300" height="88" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="158" y="52" text-anchor="middle" font-size="14">I · 文本预训练</text>
+          <text x="158" y="76" text-anchor="middle" font-size="12" fill="#57534e">全部 text–motion</text>
+          <text x="158" y="96" text-anchor="middle" font-size="11" fill="#57534e">冻音频 / 轨迹编码器</text>
+          <path d="M316 68 H348" stroke="#0f4c4a"/><polygon points="348,64 356,68 348,72" fill="#0f4c4a"/>
+          <rect x="360" y="24" width="300" height="88" fill="#fff" stroke="#0f4c4a"/>
+          <text x="510" y="52" text-anchor="middle" font-size="14">II · 多模态对齐</text>
+          <text x="510" y="76" text-anchor="middle" font-size="12" fill="#57534e">引入音视频对齐子集</text>
+          <text x="510" y="96" text-anchor="middle" font-size="11" fill="#57534e">冻文本编码器 + Transformer，只训 A/Traj</text>
+          <path d="M668 68 H700" stroke="#0f4c4a"/><polygon points="700,64 708,68 700,72" fill="#0f4c4a"/>
+          <rect x="712" y="24" width="252" height="88" fill="#fff7ed" stroke="#b45309"/>
+          <text x="838" y="52" text-anchor="middle" font-size="14">III · 联合微调</text>
+          <text x="838" y="76" text-anchor="middle" font-size="12" fill="#57534e">10% 纯文本 + 全部音频</text>
+          <text x="838" y="96" text-anchor="middle" font-size="11" fill="#57534e">p=0.1 模态增强</text>
+        </svg>
+        <p class="caption">图 5 · 论文 Sec.4.3。阶段 II 把音频和轨迹映射进已经对齐好的文本–动作空间，避免小数据把主干带偏。</p>
+      </div>
+      <p class="small">生成器：AdamW，lr 2e-4 → 1e-5，500 warmup + cosine，48×H20，210 epoch，bs 16/卡。</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">实验 · 重建</div>
+      <h2>R-FSQ 在三个测试集上的 MPJPE（mm）</h2>
+      <div class="cols">
+        <table>
+          <thead><tr><th>方法</th><th>训练数据</th><th>HML3D</th><th>MotionMillion</th><th>OmniHuMo</th></tr></thead>
+          <tbody>
+            <tr><td>ScaMo (FSQ)</td><td>MotionUnion</td><td class="num">63.3</td><td class="num">88.9</td><td class="num">—</td></tr>
+            <tr><td>GoToZero</td><td>MotionMillion</td><td class="num">41.9</td><td class="num">45.5</td><td class="num">36.1</td></tr>
+            <tr class="hi"><td>AnyMo R-FSQ</td><td>OmniHuMo</td><td class="num">27.9</td><td class="num">21.5</td><td class="num">13.2</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p class="small" style="margin-top:0">柱状为 HumanML3D MPJPE ↓</p>
+          <div class="bars">
+            <div class="bar-row"><span>AnyMo</span><div class="bar-track"><div class="bar-fill" style="width:44%"></div></div><span class="bar-val">27.9</span></div>
+            <div class="bar-row"><span>GoToZero</span><div class="bar-track"><div class="bar-fill warn" style="width:66%"></div></div><span class="bar-val">41.9</span></div>
+            <div class="bar-row"><span>ScaMo</span><div class="bar-track"><div class="bar-fill warn" style="width:100%"></div></div><span class="bar-val">63.3</span></div>
+          </div>
+          <p class="small">训练数据不同，不完全公平。作者把优势同时归给更大数据和残差量化。自家测试集 13.2 mm 最低，符合预期。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">实验 · 文本 scaling</div>
+      <h2>OmniHuMo-Text：规模越大，FID 越低</h2>
+      <div class="cols">
+        <table>
+          <thead><tr><th>模型</th><th>FID ↓</th><th>R@1 ↑</th><th>MMDist ↓</th><th>Div →</th></tr></thead>
+          <tbody>
+            <tr><td>真实数据</td><td>—</td><td class="num">0.74</td><td class="num">25.75</td><td class="num">46.59</td></tr>
+            <tr><td>111M</td><td class="num">262.10</td><td class="num">0.63</td><td class="num">29.16</td><td class="num">43.57</td></tr>
+            <tr><td>343M</td><td class="num">216.26</td><td class="num">0.67</td><td class="num">28.23</td><td class="num">44.98</td></tr>
+            <tr><td>775M</td><td class="num">148.81</td><td class="num">0.71</td><td class="num">27.24</td><td class="num">45.36</td></tr>
+            <tr><td>1B</td><td class="num">102.21</td><td class="num">0.74</td><td class="num">26.28</td><td class="num">45.74</td></tr>
+            <tr class="hi"><td>3B</td><td class="num">55.59</td><td class="num">0.75</td><td class="num">25.87</td><td class="num">46.71</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p class="small" style="margin-top:0">文本 FID ↓（相对 111M=100%）</p>
+          <div class="bars">
+            <div class="bar-row"><span>111M</span><div class="bar-track"><div class="bar-fill warn" style="width:100%"></div></div><span class="bar-val">262</span></div>
+            <div class="bar-row"><span>775M</span><div class="bar-track"><div class="bar-fill" style="width:57%"></div></div><span class="bar-val">149</span></div>
+            <div class="bar-row"><span>1B</span><div class="bar-track"><div class="bar-fill" style="width:39%"></div></div><span class="bar-val">102</span></div>
+            <div class="bar-row"><span>3B</span><div class="bar-track"><div class="bar-fill" style="width:21%"></div></div><span class="bar-val">56</span></div>
+          </div>
+          <p class="small">3B 的 R@1 到 0.75，略超真实 0.74。文本侧 scaling 最干净，也是这篇最能站住的曲线。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">实验 · 音频 scaling</div>
+      <h2>语音 / 音乐 FID 并不单调，775M 往往最好</h2>
+      <div class="cols">
+        <table>
+          <thead><tr><th>模型</th><th>Speech FID</th><th>Speech BAS</th><th>Music FID</th><th>Music BAS</th></tr></thead>
+          <tbody>
+            <tr><td>111M</td><td class="num">178.83</td><td class="num">0.204</td><td class="num">70.98</td><td class="num">0.207</td></tr>
+            <tr><td>343M</td><td class="num">201.01</td><td class="num">0.202</td><td class="num">74.18</td><td class="num">0.209</td></tr>
+            <tr class="hi"><td>775M</td><td class="num">83.80</td><td class="num">0.205</td><td class="num">34.41</td><td class="num">0.210</td></tr>
+            <tr><td>1B</td><td class="num">96.87</td><td class="num">0.208</td><td class="num">37.62</td><td class="num">0.211</td></tr>
+            <tr><td>3B</td><td class="num">91.12</td><td class="num">0.214</td><td class="num">46.17</td><td class="num">0.213</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p>BAS（节拍对齐）随规模缓慢上升，说明时间建模还在变好。</p>
+          <p style="margin-top:10px">FID 在 775M 之后反弹。作者归因为配对数据太少导致过拟合，没有再拆：WavTokenizer 是否成瓶颈、文本预训练是否把模型拉向文本条件。</p>
+          <p class="small">读这篇时不要把「any-modality scaling」理解成所有模态都单调变好。文本是，音频不是。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">实验 · 组合条件</div>
+      <h2>加轨迹最能把空间误差打下来</h2>
+      <div class="cols">
+        <div>
+          <p class="small" style="margin-top:0">文本 ± 轨迹（AnyMo-3B，OmniHuMo-Text）</p>
+          <table>
+            <thead><tr><th>条件</th><th>FID</th><th>R@1</th><th>均误差 cm</th></tr></thead>
+            <tbody>
+              <tr><td>T</td><td class="num">55.59</td><td class="num">0.75</td><td class="num">50.50</td></tr>
+              <tr class="hi"><td>T + Traj</td><td class="num">41.43</td><td class="num">0.77</td><td class="num">27.16</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <p class="small" style="margin-top:0">语音 ± 文本 ± 轨迹（Speech 测试集）</p>
+          <table>
+            <thead><tr><th>条件</th><th>FID</th><th>BAS</th></tr></thead>
+            <tbody>
+              <tr><td>S</td><td class="num">91.12</td><td class="num">0.214</td></tr>
+              <tr><td>S + T</td><td class="num">89.74</td><td class="num">0.215</td></tr>
+              <tr><td>S + Traj</td><td class="num">76.82</td><td class="num">0.217</td></tr>
+              <tr class="hi"><td>S + T + Traj</td><td class="num">76.55</td><td class="num">0.217</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p class="small">音乐侧趋势类似：加轨迹 FID 46.17→43.0 左右，Div 略降，条件收紧了动作空间。论文没有展示「仅音乐+轨迹」或「语音+音乐」等其它组合，所以「任意组合」的实证覆盖还不完整。</p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">讨论</div>
+      <h2>局限：评测封闭、开源空、音频曲线没讲透</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>评测封闭</h3>
+          <p>主结果几乎全在 OmniHuMo。HumanML3D 只做了 tokenizer / 建模策略消融，没有和 MDM、MotionDiffuse、MoMask 等生成 SOTA 全面对比。</p>
+        </div>
+        <div class="card">
+          <h3>未开源</h3>
+          <p>代码、权重、数据集都没放。附录 C 超参很全，但没有数据就无法复现。自动标注（尤其 LLM 描述）也没有人工质检。</p>
+        </div>
+        <div class="card">
+          <h3>any-modality 偏工程</h3>
+          <p>组合增益展示了，但没解释轨迹如何改写语音驱动的动作，文本和 ASR 是冗余还是互补。手指关节缺失，纯运动学。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">带走</div>
+      <h2>和本周 ARDY 对照着看</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>1 · 数据对齐先于统一模型</h3>
+          <p>AnyMo 能做组合条件，先决条件是 500h 音视频对齐 + 三阶段课程。没有对齐数据，再大的 LLaMA 也只是多任务单输入。</p>
+        </div>
+        <div class="card">
+          <h3>2 · 多流不要 flatten</h3>
+          <p>残差层是层级结构，不是更长的一维序列。同一时间步一起 mask，比 AR-Flatten 质量和效率都好。</p>
+        </div>
+        <div class="card">
+          <h3>3 · Scaling 分模态看</h3>
+          <p>文本数据够，FID 随参数单调降。音频配对少，775M 之后 FID 反弹。不要把文本曲线直接外推到语音/音乐。</p>
+        </div>
+        <div class="card">
+          <h3>4 · 对工作的启发</h3>
+          <p>ARDY 解决的是<strong>实时 + 长程运动学控制</strong>；AnyMo 解决的是<strong>任意模态组合 + 规模</strong>。一个偏交互系统，一个偏数据与统一生成器。两者都用了 FSQ，但 ARDY 把 root 显式留下，AnyMo 把全身都离散成多层 token。</p>
+        </div>
+      </div>
+      <p class="small">完整笔记见本周 <code>paper_.md</code> 的 AnyMo 条目。解读参考 <a href="https://nanless.github.io/audio-paper-digest-blog/posts/2026-06-02-anymo-scaling-any-modality-conditional-motion/">audio-paper-digest</a>。</p>
+    </section>
+
+  </div>
+  <div class="footer">
+    <span>AnyMo · Paper Weekly · 2026-08-17 ~ 08-23</span>
+    <span id="counter">1 / 1</span>
+  </div>
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const bar = document.getElementById("bar");
+    const counter = document.getElementById("counter");
+    let i = 0;
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach((s, k) => s.classList.toggle("active", k === i));
+      bar.style.width = ((i + 1) / slides.length * 100) + "%";
+      counter.textContent = (i + 1) + " / " + slides.length;
+    }
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+      if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+      if (e.key === "Home") show(0);
+      if (e.key === "End") show(slides.length - 1);
+    });
+    document.body.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      show(e.clientX > innerWidth * 0.28 ? i + 1 : i - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>

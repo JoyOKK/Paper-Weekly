@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARDY · Paper Weekly</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1c1917;
+      --muted: #57534e;
+      --line: #d6d3d1;
+      --paper: #faf8f5;
+      --card: #ffffff;
+      --accent: #0f4c4a;
+      --accent-soft: #e7f1f0;
+      --accent-2: #9a3412;
+      --root: #b45309;
+      --body: #1d4ed8;
+      --goal: #be123c;
+      --ok: #166534;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--paper); color: var(--ink); }
+    body { font-family: "IBM Plex Sans", "Noto Sans SC", sans-serif; overflow: hidden; }
+    .deck { height: 100%; }
+    .slide {
+      display: none;
+      height: 100%;
+      padding: 48px 64px 68px;
+      flex-direction: column;
+      overflow: auto;
+    }
+    .slide.active { display: flex; }
+    .kicker {
+      font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent); font-weight: 600; margin-bottom: 8px;
+    }
+    h1 {
+      font-family: "Noto Serif SC", serif;
+      font-size: 34px; line-height: 1.28; font-weight: 700; max-width: 22em;
+    }
+    h2 {
+      font-family: "Noto Serif SC", serif;
+      font-size: 26px; line-height: 1.3; margin-bottom: 16px;
+    }
+    p, li { font-size: 16px; line-height: 1.55; }
+    .sub { margin-top: 12px; font-size: 16px; color: var(--muted); max-width: 52em; }
+    .meta { margin-top: 20px; font-size: 15px; color: var(--muted); }
+    .meta a { color: var(--accent); }
+    ul { padding-left: 1.15em; }
+    li + li { margin-top: 6px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card { background: var(--card); border: 1px solid var(--line); padding: 14px 16px; }
+    .card h3 {
+      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 6px;
+    }
+    .card p, .card li { font-size: 14px; }
+    .fig {
+      background: var(--card);
+      border: 1px solid var(--line);
+      padding: 12px 14px 8px;
+      margin: 8px 0 4px;
+    }
+    .fig svg { display: block; width: 100%; height: auto; }
+    .caption { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    pre, .code {
+      background: #1c1917; color: #f5f5f4;
+      font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+      font-size: 13px; line-height: 1.55;
+      padding: 14px 16px; overflow: auto;
+      border: 1px solid #1c1917;
+    }
+    .code .cm { color: #a8a29e; }
+    .code .kw { color: #5eead4; }
+    .code .fn { color: #93c5fd; }
+    .code .st { color: #fcd34d; }
+    .code .nu { color: #fdba74; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+    td.num { font-variant-numeric: tabular-nums; font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+    tr.hi td { background: var(--accent-soft); font-weight: 600; }
+    .yes { color: var(--ok); font-weight: 600; }
+    .no { color: var(--accent-2); }
+    .mid { color: var(--root); }
+    .bars { display: flex; flex-direction: column; gap: 8px; }
+    .bar-row { display: grid; grid-template-columns: 110px 1fr 64px; gap: 8px; align-items: center; font-size: 13px; }
+    .bar-track { height: 10px; background: #e7e5e4; }
+    .bar-fill { height: 100%; background: var(--accent); }
+    .bar-fill.warn { background: var(--accent-2); }
+    .bar-fill.alt { background: var(--body); }
+    .bar-val { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); text-align: right; }
+    .legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .dot { display: inline-block; width: 8px; height: 8px; margin-right: 4px; vertical-align: middle; }
+    .footer {
+      position: fixed; left: 64px; right: 64px; bottom: 18px;
+      display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);
+    }
+    .progress { position: fixed; left: 0; right: 0; top: 0; height: 3px; background: var(--line); }
+    .progress > span { display: block; height: 100%; background: var(--accent); width: 0%; }
+    .small { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .cols-63 { grid-template-columns: 1.4fr 0.9fr; }
+    .chip {
+      display: inline-block; font-size: 12px; padding: 2px 8px;
+      border: 1px solid var(--line); background: var(--card); margin-right: 6px;
+    }
+    .hint { font-size: 13px; color: var(--muted); margin-top: 18px; }
+    @media (max-width: 900px) {
+      .slide { padding: 28px 20px 60px; }
+      h1 { font-size: 24px; }
+      h2 { font-size: 20px; }
+      .grid, .grid-3, .grid-4, .cols, .cols-63 { grid-template-columns: 1fr; }
+      .footer { left: 20px; right: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress"><span id="bar"></span></div>
+  <div class="deck">
+
+    <!-- 1 封面 -->
+    <section class="slide active">
+      <div class="kicker">Paper Weekly · 2026-08-17 ~ 08-23</div>
+      <h1>ARDY：混合表征上的自回归扩散，做交互式人体动作生成</h1>
+      <p class="sub">Autoregressive Diffusion with Hybrid Representation for Interactive Human Motion Generation · SIGGRAPH / TOG 2026</p>
+      <div class="fig" style="margin-top:20px">
+        <svg viewBox="0 0 980 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ARDY 一句话流水线">
+          <rect x="8" y="36" width="150" height="72" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="83" y="68" text-anchor="middle" font-size="13" fill="#0f4c4a">在线文本 s</text>
+          <text x="83" y="88" text-anchor="middle" font-size="12" fill="#57534e">+ 稀疏约束 g</text>
+          <path d="M166 72 H196" stroke="#0f4c4a" stroke-width="1.5"/>
+          <polygon points="196,68 206,72 196,76" fill="#0f4c4a"/>
+          <rect x="210" y="24" width="210" height="96" fill="#fff" stroke="#0f4c4a"/>
+          <text x="315" y="48" text-anchor="middle" font-size="12" fill="#57534e">HYBRID TOKEN</text>
+          <text x="315" y="72" text-anchor="middle" font-size="14" fill="#b45309">显式 root m_root</text>
+          <text x="315" y="94" text-anchor="middle" font-size="14" fill="#1d4ed8">潜在 body x_body</text>
+          <path d="M428 72 H458" stroke="#0f4c4a" stroke-width="1.5"/>
+          <polygon points="458,68 468,72 458,76" fill="#0f4c4a"/>
+          <rect x="472" y="24" width="230" height="96" fill="#fff" stroke="#0f4c4a"/>
+          <text x="587" y="52" text-anchor="middle" font-size="12" fill="#57534e">TWO-STAGE DENOISER</text>
+          <text x="587" y="76" text-anchor="middle" font-size="14" fill="#1c1917">先 root，再 body</text>
+          <text x="587" y="98" text-anchor="middle" font-size="12" fill="#57534e">可变历史 · 窗口外目标</text>
+          <path d="M710 72 H740" stroke="#0f4c4a" stroke-width="1.5"/>
+          <polygon points="740,68 750,72 740,76" fill="#0f4c4a"/>
+          <rect x="754" y="36" width="210" height="72" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="859" y="68" text-anchor="middle" font-size="13" fill="#0f4c4a">流式动作 20 fps</text>
+          <text x="859" y="88" text-anchor="middle" font-size="12" fill="#57534e">4-step · 33 ms</text>
+        </svg>
+        <p class="caption">图 1 · 一句话：把好控的全局 root 显式留下，把高维身体压进 latent，用两阶段自回归扩散做实时交互生成。</p>
+      </div>
+      <p class="meta">
+        Zhao / Petrovich / Zhang / Wang / Tang / Rempe · NVIDIA + ETH Zürich<br />
+        <a href="https://research.nvidia.com/labs/sil/projects/ardy/">Project</a> ·
+        <a href="https://arxiv.org/abs/2607.08741">arXiv:2607.08741</a> ·
+        <a href="https://github.com/nv-tlabs/ardy">Code</a>
+        <span class="hint">方向键 / 空格翻页 · 点击左右半屏</span>
+      </p>
+    </section>
+
+    <!-- 2 提纲 -->
+    <section class="slide">
+      <div class="kicker">阅读提纲</div>
+      <h2>四段结构，对应本周 paper_.md 记录字段</h2>
+      <div class="grid-4">
+        <div class="card"><h3>01 挑战</h3><p>离线可控但慢；在线实时但控不住长程语义与窗口外目标。</p></div>
+        <div class="card"><h3>02 Idea</h3><p>显式 root + 隐式 body；约束写成 masked 动作；短生成、长条件。</p></div>
+        <div class="card"><h3>03 方法</h3><p>FSQ tokenizer → 两阶段去噪 → 延迟感知重规划。下文用图 / 代码展开。</p></div>
+        <div class="card"><h3>04 结果</h3><p>Bones 消融证明拆分有效；HumanML3D 上压过 DiP，接近离线控制精度。</p></div>
+      </div>
+      <div class="fig" style="margin-top:16px">
+        <svg viewBox="0 0 980 150" xmlns="http://www.w3.org/2000/svg">
+          <text x="8" y="22" font-size="12" fill="#57534e">能力地图（示意，对应 Table 1）</text>
+          <line x1="70" y1="130" x2="940" y2="130" stroke="#d6d3d1"/>
+          <line x1="70" y1="36" x2="70" y2="130" stroke="#d6d3d1"/>
+          <text x="505" y="148" text-anchor="middle" font-size="11" fill="#57534e">控制能力（文本 + 运动学 + 长程）→</text>
+          <text x="18" y="86" font-size="11" fill="#57534e" transform="rotate(-90 18 86)">实时性 ↑</text>
+          <circle cx="210" cy="118" r="8" fill="#9a3412"/><text x="224" y="122" font-size="12">MaskControl / Kimodo · 离线强控</text>
+          <circle cx="430" cy="52" r="8" fill="#1d4ed8"/><text x="444" y="48" font-size="12">A-MDM / CAMDM · 实时弱文本</text>
+          <circle cx="610" cy="58" r="8" fill="#b45309"/><text x="624" y="54" font-size="12">DiP / DartControl · 短上下文</text>
+          <circle cx="820" cy="46" r="10" fill="#0f4c4a"/><text x="836" y="42" font-size="13" font-weight="600" fill="#0f4c4a">ARDY · 实时 + 长程原生控制</text>
+        </svg>
+        <p class="caption">图 2 · 论文要占的象限：右上角——既实时，又能同时吃复杂文本和长程运动学约束。</p>
+      </div>
+    </section>
+
+    <!-- 3 问题 -->
+    <section class="slide">
+      <div class="kicker">问题</div>
+      <h2>交互场景要「改条件立刻出下一段动作」</h2>
+      <div class="cols">
+        <div>
+          <p>动画、游戏、仿真、人形机器人都要在运行时生成 3D 人体动作，并且立刻响应新的文本或空间指令。论文把方法分成两类：</p>
+          <ul style="margin-top:12px">
+            <li><strong>离线：</strong>整段并行去噪 / 掩码补全。文本和关键帧很强，但改一句 prompt 就要重跑全序列。</li>
+            <li><strong>在线：</strong>自回归短窗生成。跟手，但历史一短，复杂语义和 10 秒后的路点就会丢。</li>
+          </ul>
+        </div>
+        <div class="fig">
+          <svg viewBox="0 0 460 210" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="10" width="210" height="190" fill="#fff" stroke="#d6d3d1"/>
+            <text x="115" y="34" text-anchor="middle" font-size="13" fill="#9a3412">OFFLINE</text>
+            <rect x="28" y="50" width="174" height="22" fill="#e7e5e4"/>
+            <rect x="28" y="78" width="174" height="22" fill="#e7e5e4"/>
+            <rect x="28" y="106" width="174" height="22" fill="#e7e5e4"/>
+            <text x="115" y="152" text-anchor="middle" font-size="11" fill="#57534e">一次生成全部帧</text>
+            <text x="115" y="172" text-anchor="middle" font-size="11" fill="#57534e">延迟 ∝ 序列长度</text>
+            <rect x="240" y="10" width="210" height="190" fill="#fff" stroke="#0f4c4a"/>
+            <text x="345" y="34" text-anchor="middle" font-size="13" fill="#0f4c4a">ONLINE / ARDY</text>
+            <rect x="258" y="50" width="50" height="22" fill="#e7f1f0" stroke="#0f4c4a"/>
+            <rect x="318" y="50" width="50" height="22" fill="#0f4c4a"/>
+            <rect x="378" y="50" width="50" height="22" fill="#e7e5e4"/>
+            <text x="345" y="92" text-anchor="middle" font-size="11" fill="#57534e">历史 | 当前窗 | 未来目标</text>
+            <text x="345" y="132" text-anchor="middle" font-size="11" fill="#1c1917">只生成 2s 窗口</text>
+            <text x="345" y="152" text-anchor="middle" font-size="11" fill="#57534e">新文本 / 新路点 → 立刻重规划</text>
+            <text x="345" y="180" text-anchor="middle" font-size="11" fill="#0f4c4a">条件可以看 8–10s</text>
+          </svg>
+          <p class="caption">图 3 · 离线一次出全片；在线只出当前窗，但条件可以看很远。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 挑战表 -->
+    <section class="slide">
+      <div class="kicker">挑战</div>
+      <h2>现有方法的能力缺口（论文 Table 1）</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>方法</th>
+            <th>实时</th>
+            <th>在线文本</th>
+            <th>Root 轨迹</th>
+            <th>关节位置</th>
+            <th>关节旋转</th>
+            <th>无优化</th>
+            <th>无 RL</th>
+            <th>历史 / 未来</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MaskControl</td>
+            <td class="no">✗</td><td class="no">✗</td>
+            <td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td>
+            <td class="no">✗</td><td class="yes">✓</td>
+            <td class="num">— / 10s</td>
+          </tr>
+          <tr>
+            <td>Kimodo</td>
+            <td class="no">✗</td><td class="no">✗</td>
+            <td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td>
+            <td class="yes">✓</td><td class="yes">✓</td>
+            <td class="num">— / 10s</td>
+          </tr>
+          <tr>
+            <td>A-MDM / CAMDM</td>
+            <td class="yes">✓</td><td class="no">✗</td>
+            <td class="yes">✓</td><td class="mid">部分</td><td class="no">✗</td>
+            <td class="yes">✓</td><td class="mid">部分</td>
+            <td class="num">≤0.3s / ≤1.5s</td>
+          </tr>
+          <tr>
+            <td>MotionStreamer</td>
+            <td class="yes">✓</td><td class="yes">✓</td>
+            <td class="no">✗</td><td class="no">✗</td><td class="no">✗</td>
+            <td>—</td><td>—</td>
+            <td class="num">10s / 10s</td>
+          </tr>
+          <tr>
+            <td>DartControl</td>
+            <td class="yes">✓</td><td class="yes">✓</td>
+            <td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td>
+            <td class="no">✗</td><td class="no">✗</td>
+            <td class="num">0.07s / 0.27s</td>
+          </tr>
+          <tr>
+            <td>DiP</td>
+            <td class="yes">✓</td><td class="yes">✓</td>
+            <td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td>
+            <td class="yes">✓</td><td class="yes">✓</td>
+            <td class="num">1s / 2s</td>
+          </tr>
+          <tr class="hi">
+            <td>ARDY</td>
+            <td class="yes">✓</td><td class="yes">✓</td>
+            <td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td>
+            <td class="yes">✓</td><td class="yes">✓</td>
+            <td class="num">8s / 10s</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="small">挑战浓缩成三句：<strong>控制与速度互斥</strong>；<strong>上下文太短会漏做 / 重复做复杂语义</strong>；<strong>窗口外目标靠测试时优化或 RL 补丁</strong>。ARDY 要原生同时打勾。</p>
+    </section>
+
+    <!-- 5 Idea + 混合表征图 -->
+    <section class="slide">
+      <div class="kicker">核心 Idea</div>
+      <h2>好控的量显式留着，好学的量压进 latent</h2>
+      <div class="cols-63">
+        <div class="fig">
+          <svg viewBox="0 0 560 250" xmlns="http://www.w3.org/2000/svg">
+            <text x="8" y="20" font-size="12" fill="#57534e">EXPLICIT 全身</text>
+            <circle cx="70" cy="70" r="8" fill="#b45309"/>
+            <text x="84" y="74" font-size="11" fill="#b45309">root p, ψ</text>
+            <line x1="70" y1="78" x2="70" y2="120" stroke="#1c1917"/>
+            <line x1="40" y1="100" x2="100" y2="100" stroke="#1c1917"/>
+            <line x1="40" y1="100" x2="28" y2="150" stroke="#1c1917"/>
+            <line x1="100" y1="100" x2="112" y2="150" stroke="#1c1917"/>
+            <line x1="70" y1="120" x2="50" y2="190" stroke="#1c1917"/>
+            <line x1="70" y1="120" x2="90" y2="190" stroke="#1c1917"/>
+            <circle cx="70" cy="120" r="3" fill="#1d4ed8"/>
+            <circle cx="40" cy="100" r="3" fill="#1d4ed8"/>
+            <circle cx="100" cy="100" r="3" fill="#1d4ed8"/>
+            <circle cx="50" cy="190" r="3" fill="#1d4ed8"/>
+            <circle cx="90" cy="190" r="3" fill="#1d4ed8"/>
+            <text x="20" y="230" font-size="11" fill="#1d4ed8">θ, J, J̇, c  ·  维度随关节数膨胀</text>
+            <path d="M170 120 H220" stroke="#0f4c4a" stroke-width="1.5"/>
+            <polygon points="220,116 230,120 220,124" fill="#0f4c4a"/>
+            <text x="200" y="108" text-anchor="middle" font-size="11" fill="#0f4c4a">拆开</text>
+            <rect x="250" y="36" width="140" height="70" fill="#fff7ed" stroke="#b45309"/>
+            <text x="320" y="66" text-anchor="middle" font-size="13" fill="#b45309">m_root ∈ R⁵</text>
+            <text x="320" y="88" text-anchor="middle" font-size="11" fill="#57534e">可 overwrite</text>
+            <rect x="250" y="124" width="140" height="70" fill="#eff6ff" stroke="#1d4ed8"/>
+            <text x="320" y="154" text-anchor="middle" font-size="13" fill="#1d4ed8">x_body ∈ Rᴸ</text>
+            <text x="320" y="176" text-anchor="middle" font-size="11" fill="#57534e">tokenizer 压缩</text>
+            <path d="M400 106 H430" stroke="#0f4c4a"/>
+            <path d="M400 154 H430" stroke="#0f4c4a"/>
+            <rect x="434" y="80" width="116" height="100" fill="#e7f1f0" stroke="#0f4c4a"/>
+            <text x="492" y="122" text-anchor="middle" font-size="13" fill="#0f4c4a">x = (m_root,</text>
+            <text x="492" y="142" text-anchor="middle" font-size="13" fill="#0f4c4a">x_body)</text>
+            <text x="492" y="164" text-anchor="middle" font-size="11" fill="#57534e">hybrid token</text>
+          </svg>
+          <p class="caption">图 4 · Hybrid 表征。全局 root 留在场景坐标；身体进 latent，每个 token 覆盖 P=4 帧。</p>
+        </div>
+        <div>
+          <p>空间约束几乎都定义在<strong>全局场景坐标</strong>里。局部速度表征一积分就漂，无法直接覆盖。</p>
+          <p style="margin-top:10px">少步扩散（4–10 step）吃不下高维显式身体。Tokenizer 把 body 压紧后，生成才学得动。</p>
+          <pre class="code" style="margin-top:12px"><span class="cm"># 论文 Eq.1–2</span>
+m_root = (p, cosψ, sinψ)          <span class="cm"># R^5</span>
+m_body = (θ, J, J_dot, c)         <span class="cm"># 随关节膨胀</span>
+x      = (m_root, x_body)         <span class="cm"># hybrid</span>
+x_body = TokenizerEnc(m_body)     <span class="cm"># R^L</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 贡献 -->
+    <section class="slide">
+      <div class="kicker">贡献</div>
+      <h2>三条贡献，分别对应表征 / 生成器 / 验证</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>C1 · Hybrid 表征</h3>
+          <p>latent body + 全局显式 root。轨迹可直接覆盖，身体在紧凑空间生成。避免局部速度积分的累积误差。</p>
+        </div>
+        <div class="card">
+          <h3>C2 · 两阶段 AR 扩散</h3>
+          <p>可变历史最长 8s，未来约束最长 10s。原生支持路径、路点、全身关键帧、稀疏关节位置 / 旋转。不挂优化器，不挂 RL。</p>
+        </div>
+        <div class="card">
+          <h3>C3 · 大规模验证</h3>
+          <p>Bones Rigplay ≈ 700h 做消融；HumanML3D 对比 MaskControl / DiP。交互 demo：动态文本、路径跟随、键鼠 locomotion。</p>
+        </div>
+      </div>
+      <p class="small">约束种类（论文 Fig.6）：dense root trajectory · sparse waypoints · full-body keyframes · sparse joint pos / rot。</p>
+    </section>
+
+    <!-- 7 流水线流程图 -->
+    <section class="slide">
+      <div class="kicker">方法 · 总览</div>
+      <h2>训练与推理的两段流水线</h2>
+      <div class="fig">
+        <svg viewBox="0 0 980 280" xmlns="http://www.w3.org/2000/svg">
+          <text x="8" y="22" font-size="12" fill="#57534e">STAGE A · TOKENIZER（先训）</text>
+          <rect x="8" y="36" width="120" height="52" fill="#fff" stroke="#1d4ed8"/>
+          <text x="68" y="67" text-anchor="middle" font-size="12" fill="#1d4ed8">m_body 1:N</text>
+          <path d="M132 62 H156" stroke="#0f4c4a"/><polygon points="156,58 164,62 156,66" fill="#0f4c4a"/>
+          <rect x="168" y="36" width="100" height="52" fill="#eff6ff" stroke="#1d4ed8"/>
+          <text x="218" y="60" text-anchor="middle" font-size="11">patch P=4</text>
+          <text x="218" y="76" text-anchor="middle" font-size="11">因果 Enc</text>
+          <path d="M272 62 H296" stroke="#0f4c4a"/><polygon points="296,58 304,62 296,66" fill="#0f4c4a"/>
+          <rect x="308" y="36" width="100" height="52" fill="#eff6ff" stroke="#1d4ed8"/>
+          <text x="358" y="67" text-anchor="middle" font-size="12" fill="#1d4ed8">x_body</text>
+          <rect x="168" y="108" width="100" height="40" fill="#fff7ed" stroke="#b45309"/>
+          <text x="218" y="133" text-anchor="middle" font-size="11" fill="#b45309">m_root patch</text>
+          <path d="M268 128 H330 330 88" fill="none" stroke="#b45309"/>
+          <rect x="432" y="48" width="130" height="88" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="497" y="80" text-anchor="middle" font-size="12">concat</text>
+          <text x="497" y="100" text-anchor="middle" font-size="12">x = [m_root; x_body]</text>
+          <path d="M566 92 H590" stroke="#0f4c4a"/><polygon points="590,88 598,92 590,96" fill="#0f4c4a"/>
+          <rect x="602" y="48" width="150" height="88" fill="#fff" stroke="#0f4c4a"/>
+          <text x="677" y="76" text-anchor="middle" font-size="12">Decoder</text>
+          <text x="677" y="96" text-anchor="middle" font-size="11" fill="#57534e">全局 root → 本地速度</text>
+          <text x="677" y="114" text-anchor="middle" font-size="11" fill="#57534e">减轻滑步</text>
+          <path d="M756 92 H780" stroke="#0f4c4a"/><polygon points="780,88 788,92 780,96" fill="#0f4c4a"/>
+          <rect x="792" y="58" width="170" height="68" fill="#fff" stroke="#1d4ed8"/>
+          <text x="877" y="88" text-anchor="middle" font-size="12" fill="#1d4ed8">重建 m_body</text>
+          <text x="877" y="108" text-anchor="middle" font-size="11" fill="#57534e">+ skate loss</text>
+
+          <text x="8" y="178" font-size="12" fill="#57534e">STAGE B · 自回归扩散（冻结 tokenizer 后训）</text>
+          <rect x="8" y="192" width="150" height="64" fill="#fff" stroke="#0f4c4a"/>
+          <text x="83" y="218" text-anchor="middle" font-size="11">s · history · g</text>
+          <text x="83" y="238" text-anchor="middle" font-size="11">noisy x_k</text>
+          <path d="M162 224 H186" stroke="#0f4c4a"/><polygon points="186,220 194,224 186,228" fill="#0f4c4a"/>
+          <rect x="198" y="192" width="200" height="64" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="298" y="218" text-anchor="middle" font-size="12">Root TF → m̂_root</text>
+          <text x="298" y="238" text-anchor="middle" font-size="12">Body TF → x̂_body</text>
+          <path d="M402 224 H426" stroke="#0f4c4a"/><polygon points="426,220 434,224 426,228" fill="#0f4c4a"/>
+          <rect x="438" y="192" width="170" height="64" fill="#fff" stroke="#0f4c4a"/>
+          <text x="523" y="218" text-anchor="middle" font-size="12">re-noise 循环</text>
+          <text x="523" y="238" text-anchor="middle" font-size="11" fill="#57534e">K = 4 或 10</text>
+          <path d="M612 224 H636" stroke="#0f4c4a"/><polygon points="636,220 644,224 636,228" fill="#0f4c4a"/>
+          <rect x="648" y="192" width="314" height="64" fill="#fff7ed" stroke="#b45309"/>
+          <text x="805" y="218" text-anchor="middle" font-size="12">Decoder 还原身体 · 滑窗回放</text>
+          <text x="805" y="238" text-anchor="middle" font-size="11" fill="#57534e">新输入触发 latency-aware replan</text>
+        </svg>
+        <p class="caption">图 5 · 方法流程图。Tokenizer 只重建身体；扩散在 hybrid token 上生成；运行时只滚动当前 2s 窗口。</p>
+      </div>
+    </section>
+
+    <!-- 8 Tokenizer 细节 + 代码 -->
+    <section class="slide">
+      <div class="kicker">方法 · Tokenizer</div>
+      <h2>因果 AE + FSQ，解码时把 root 转成本地速度</h2>
+      <div class="cols">
+        <div>
+          <ul>
+            <li>Enc / Dec 各 8 层因果 Transformer，latent 512。输入按 P 帧 reshape 成 token。</li>
+            <li>Hybrid token：<code>x^{1:T} = [m_root^{1:T}; x_body^{1:T}]</code>，D = L + 5P。</li>
+            <li>解码器条件用<strong>本地</strong> root <code>(ψ̇, ṗ_x, ṗ_z, p_y)</code>。全局 root 适合控制，本地速度适合抑制滑步。</li>
+            <li>默认 FSQ 64 级 × 128 维。Vanilla AE 在 40 帧 horizon 上会训崩。</li>
+          </ul>
+          <pre class="code" style="margin-top:12px"><span class="kw">def</span> <span class="fn">tokenize</span>(m_root, m_body, P=<span class="nu">4</span>):
+    patches = rearrange(m_body, <span class="st">"n d -> (n/P) (P d)"</span>)
+    x_body  = FSQ(encoder(patches))          <span class="cm"># 因果注意力</span>
+    root_p  = rearrange(m_root, <span class="st">"n 5 -> (n/P) (P 5)"</span>)
+    <span class="kw">return</span> concat([root_p, x_body], dim=-<span class="nu">1</span>)
+
+<span class="kw">def</span> <span class="fn">decode</span>(x):
+    root_local = global_to_local(x.root)     <span class="cm"># 防滑步</span>
+    <span class="kw">return</span> decoder(concat([root_local, x.body]))</pre>
+        </div>
+        <div>
+          <table>
+            <thead><tr><th>Tokenizer</th><th>稳定性</th><th>选用</th></tr></thead>
+            <tbody>
+              <tr><td>Vanilla AE</td><td class="no">长 horizon 发散</td><td>公开集实验</td></tr>
+              <tr><td>VAE 128D</td><td class="mid">可用</td><td>消融对照</td></tr>
+              <tr class="hi"><td>FSQ 64-128</td><td class="yes">最稳</td><td>默认 / demo</td></tr>
+            </tbody>
+          </table>
+          <p class="small">训练：重建 + skate loss（权 0.01），4M step，AdamAtan2，lr 2e-5，单卡 A100。Patch=1 后期不稳；Patch=8 FID 略好但约束精度掉。</p>
+          <div class="fig" style="margin-top:10px">
+            <svg viewBox="0 0 420 90" xmlns="http://www.w3.org/2000/svg">
+              <text x="0" y="16" font-size="11" fill="#57534e">滑步：解码器是否转本地 root（Table 2）</text>
+              <rect x="0" y="36" width="264" height="12" fill="#0f4c4a"/>
+              <text x="272" y="46" font-size="12">ARDY 0.264 m/s</text>
+              <rect x="0" y="62" width="303" height="12" fill="#9a3412"/>
+              <text x="312" y="72" font-size="12">全局解码 0.303 m/s</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 问题形式 + 时间轴 -->
+    <section class="slide">
+      <div class="kicker">方法 · 问题形式</div>
+      <h2>短窗口生成，条件可以看很远</h2>
+      <div class="fig">
+        <svg viewBox="0 0 980 130" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="36" width="280" height="50" fill="#e7e5e4"/>
+          <text x="160" y="66" text-anchor="middle" font-size="14">History H · 0–8s 可变</text>
+          <rect x="300" y="28" width="220" height="66" fill="#0f4c4a"/>
+          <text x="410" y="58" text-anchor="middle" font-size="14" fill="#fff">Window C · 2s / 40 帧</text>
+          <text x="410" y="78" text-anchor="middle" font-size="11" fill="#e7f1f0">模型只生成这一段</text>
+          <rect x="520" y="36" width="440" height="50" fill="#fff1f2" stroke="#be123c"/>
+          <text x="740" y="58" text-anchor="middle" font-size="14" fill="#be123c">Future goals F · 最长 10s</text>
+          <text x="740" y="76" text-anchor="middle" font-size="11" fill="#57534e">可落在窗口外，例如 10s 后到某点</text>
+          <text x="160" y="110" text-anchor="middle" font-size="11" fill="#57534e">x^(−H+1):0</text>
+          <text x="410" y="110" text-anchor="middle" font-size="11" fill="#0f4c4a">x^1:C = F(…)</text>
+          <text x="740" y="110" text-anchor="middle" font-size="11" fill="#be123c">g^1:(C+F)</text>
+        </svg>
+        <p class="caption">图 6 · 时间轴。生成窗固定约 2s 保证跟手；历史用来记住非周期语义；窗口外目标决定当前第一步朝哪走。</p>
+      </div>
+      <pre class="code" style="margin-top:10px"><span class="cm"># 论文 Eq.4  预测窗从 token 1 开始</span>
+x[1:C] = F(
+    s,                 <span class="cm"># 当前窗文本，可在线改</span>
+    x[-H+1:0],         <span class="cm"># 可变历史，训练时从 0 到 H_max 采样</span>
+    g[1:C+F]           <span class="cm"># 窗内目标 + 窗外长程目标</span>
+)</pre>
+      <p class="small">反例：「向前走，再弯腰捡东西，再继续走」。若历史只有最近走路帧，模型不知道捡东西做过没有，会漏做或重复做。这就是 DiP / DartControl 短上下文的病。</p>
+    </section>
+
+    <!-- 10 约束类型图 + overwrite 代码 -->
+    <section class="slide">
+      <div class="kicker">方法 · 约束</div>
+      <h2>约束 = masked 显式动作，root 直接覆盖</h2>
+      <div class="grid-4">
+        <div class="card">
+          <h3>Dense trajectory</h3>
+          <svg viewBox="0 0 160 54" width="100%"><path d="M8 40 C40 8, 80 50, 150 16" fill="none" stroke="#b45309" stroke-width="3"/><circle cx="8" cy="40" r="3" fill="#b45309"/><circle cx="150" cy="16" r="3" fill="#b45309"/></svg>
+          <p>密采样 root 路径，跟手走线。</p>
+        </div>
+        <div class="card">
+          <h3>Sparse waypoints</h3>
+          <svg viewBox="0 0 160 54" width="100%"><path d="M10 40 L60 20 L110 36 L150 12" fill="none" stroke="#d6d3d1"/><circle cx="10" cy="40" r="5" fill="none" stroke="#be123c"/><circle cx="60" cy="20" r="5" fill="none" stroke="#be123c"/><circle cx="150" cy="12" r="5" fill="none" stroke="#be123c"/></svg>
+          <p>红环路点，可在 10s 外。</p>
+        </div>
+        <div class="card">
+          <h3>Full-body keyframe</h3>
+          <svg viewBox="0 0 160 54" width="100%"><line x1="80" y1="8" x2="80" y2="24" stroke="#be123c"/><line x1="64" y1="16" x2="96" y2="16" stroke="#be123c"/><line x1="80" y1="24" x2="68" y2="46" stroke="#be123c"/><line x1="80" y1="24" x2="92" y2="46" stroke="#be123c"/></svg>
+          <p>钉住全身姿态块或稀疏帧。</p>
+        </div>
+        <div class="card">
+          <h3>End-effector</h3>
+          <svg viewBox="0 0 160 54" width="100%"><circle cx="48" cy="28" r="4" fill="#be123c"/><circle cx="112" cy="18" r="4" fill="#be123c"/><text x="48" y="48" text-anchor="middle" font-size="10" fill="#57534e">手</text><text x="112" y="48" text-anchor="middle" font-size="10" fill="#57534e">脚</text></svg>
+          <p>稀疏关节位置 / 旋转。</p>
+        </div>
+      </div>
+      <pre class="code" style="margin-top:12px"><span class="cm"># 论文 Sec.3.4  root overwrite + masked body 条件</span>
+g, v = patchify(goals)                       <span class="cm"># 未约束维 g=0, v=0</span>
+root_tilde = (<span class="nu">1</span> - v.root) * noisy.root + v.root * g.root
+x_in = concat([root_tilde, noisy.body, g.body, v])
+<span class="kw">if</span> has_beyond_horizon:
+    extra_tokens = concat([g[C+1:C+F], v[C+1:C+F]])   <span class="cm"># 窗外目标当 token</span></pre>
+    </section>
+
+    <!-- 11 两阶段架构图 -->
+    <section class="slide">
+      <div class="kicker">方法 · 去噪器</div>
+      <h2>交错两阶段：先干净 root，再条件出 body</h2>
+      <div class="fig">
+        <svg viewBox="0 0 980 220" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="24" width="170" height="172" fill="#fff" stroke="#d6d3d1"/>
+          <text x="93" y="48" text-anchor="middle" font-size="12" fill="#57534e">条件</text>
+          <rect x="22" y="60" width="142" height="26" fill="#e7f1f0"/><text x="93" y="78" text-anchor="middle" font-size="11">k, s（LLM2Vec）</text>
+          <rect x="22" y="94" width="142" height="26" fill="#e7e5e4"/><text x="93" y="112" text-anchor="middle" font-size="11">history x</text>
+          <rect x="22" y="128" width="142" height="26" fill="#fff7ed"/><text x="93" y="146" text-anchor="middle" font-size="11">noisy x_k</text>
+          <rect x="22" y="162" width="142" height="22" fill="#fff1f2"/><text x="93" y="177" text-anchor="middle" font-size="11" fill="#be123c">g, v</text>
+          <path d="M182 110 H214" stroke="#0f4c4a"/><polygon points="214,106 222,110 214,114" fill="#0f4c4a"/>
+          <rect x="226" y="36" width="240" height="70" fill="#fff7ed" stroke="#b45309"/>
+          <text x="346" y="66" text-anchor="middle" font-size="14" fill="#b45309">Root Transformer</text>
+          <text x="346" y="88" text-anchor="middle" font-size="11">8L · 8H · 1024 → m̂_root</text>
+          <path d="M346 106 V128" stroke="#b45309"/>
+          <text x="354" y="124" font-size="11" fill="#b45309">detach</text>
+          <rect x="226" y="132" width="240" height="70" fill="#eff6ff" stroke="#1d4ed8"/>
+          <text x="346" y="162" text-anchor="middle" font-size="14" fill="#1d4ed8">Body Transformer</text>
+          <text x="346" y="184" text-anchor="middle" font-size="11">条件于干净 root → x̂_body</text>
+          <path d="M470 70 H510" stroke="#b45309"/>
+          <path d="M470 166 H510" stroke="#1d4ed8"/>
+          <rect x="514" y="78" width="180" height="80" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="604" y="112" text-anchor="middle" font-size="13">x̂_0 = [m̂_root; x̂_body]</text>
+          <text x="604" y="136" text-anchor="middle" font-size="11" fill="#57534e">hybrid 干净预测</text>
+          <path d="M698 118 H730" stroke="#0f4c4a"/><polygon points="730,114 738,118 730,122" fill="#0f4c4a"/>
+          <rect x="742" y="48" width="220" height="140" fill="#fff" stroke="#0f4c4a"/>
+          <text x="852" y="80" text-anchor="middle" font-size="13">re-noise → 下一步</text>
+          <text x="852" y="108" text-anchor="middle" font-size="12" fill="#57534e">K 步交错，root / body</text>
+          <text x="852" y="128" text-anchor="middle" font-size="12" fill="#57534e">持续互相看见</text>
+          <text x="852" y="160" text-anchor="middle" font-size="12">最后 Decoder 还原</text>
+        </svg>
+        <p class="caption">图 7 · 论文 Fig.3。假设：先有干净轨迹再生成身体，比两者一起预测更容易同时满足文本和约束。</p>
+      </div>
+    </section>
+
+    <!-- 12 两阶段伪代码 -->
+    <section class="slide">
+      <div class="kicker">方法 · 去噪循环</div>
+      <h2>推理时的交错去噪（对应 Fig.3 右）</h2>
+      <div class="cols">
+        <pre class="code"><span class="kw">def</span> <span class="fn">denoise_window</span>(s, history, goals, K=<span class="nu">4</span>):
+    x = randn(C, D)                          <span class="cm"># noisy hybrid</span>
+    <span class="kw">for</span> k <span class="kw">in</span> reversed(range(K)):
+        x.root = overwrite(x.root, goals)    <span class="cm"># 精确轨迹</span>
+        m_root = root_tf(k, s, history, x, goals)
+        x_body = body_tf(k, s, history, x,
+                         detach(m_root), goals)
+        x0 = concat([m_root, x_body])
+        x  = q_sample(x0, k - <span class="nu">1</span>) <span class="kw">if</span> k <span class="kw">else</span> x0
+    motion = tokenizer.decode(x0)
+    <span class="kw">return</span> unpatchify(motion)                <span class="cm"># G = C·P 帧</span></pre>
+        <div>
+          <p>两支路都是 8 层 × 8 头 × 1024 维，部署模型约 <strong>156M</strong>。文本用 LLM2Vec（Llama-3-8B-Instruct 上训的 embedding）。</p>
+          <p style="margin-top:10px"><strong>不用 dropout</strong>：会把 root 覆盖条件随机关掉，轨迹控制会坏。</p>
+          <p style="margin-top:10px">单阶段对照：路点误差 0.024 → <strong>0.164 m</strong>。文本 R-prec 几乎不动，说明两阶段主要买的是<strong>控制精度</strong>，不是语义。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 训练损失 -->
+    <section class="slide">
+      <div class="kicker">方法 · 训练</div>
+      <h2>四项损失，约束从 GT 动作上采样</h2>
+      <pre class="code">L = L_hybrid + L_dec + L_goal + L_consist
+
+L_hybrid  = smooth_L1(x0_hat, x0)                 <span class="cm"># token 空间</span>
+L_dec     = smooth_L1(decode(x0_hat), m_body)     <span class="cm"># 解码后身体</span>
+L_goal    = smooth_L1(v * (m0_hat - g))           <span class="cm"># 只罚被钉住的维</span>
+L_consist = ||J_hat - FK(θ_hat)||_2               <span class="cm"># 位置 vs 旋转</span></pre>
+      <div class="grid-3" style="margin-top:12px">
+        <div class="card">
+          <h3>采样窗</h3>
+          <p>最长 10s 片段上随机切 G 帧窗，于是每条样本的 H、F 都在变。绕 y 轴随机旋转。</p>
+        </div>
+        <div class="card">
+          <h3>约束集合</h3>
+          <p>2D root 关键帧 / 轨迹、全身稀疏或成块关键帧、末端执行器、脚接触。文本与约束各 10% dropout → CFG。</p>
+        </div>
+        <div class="card">
+          <h3>优化</h3>
+          <p>DDPM 默认 10 step，交互可用 4。AdamAtan2，lr 2e-5，bs 512 × 4×A100，1M step。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 重规划流程图 -->
+    <section class="slide">
+      <div class="kicker">系统</div>
+      <h2>延迟感知重规划：把推理藏进正在播的 buffer</h2>
+      <div class="fig">
+        <svg viewBox="0 0 980 200" xmlns="http://www.w3.org/2000/svg">
+          <text x="8" y="20" font-size="12" fill="#57534e">时间 →</text>
+          <rect x="20" y="40" width="280" height="36" fill="#e7e5e4"/>
+          <text x="160" y="63" text-anchor="middle" font-size="13">已播放</text>
+          <rect x="300" y="40" width="120" height="36" fill="#b45309"/>
+          <text x="360" y="63" text-anchor="middle" font-size="13" fill="#fff">Buffer B</text>
+          <rect x="420" y="40" width="280" height="36" fill="#0f4c4a"/>
+          <text x="560" y="63" text-anchor="middle" font-size="13" fill="#fff">正在异步生成的下一窗</text>
+          <rect x="700" y="40" width="240" height="36" fill="#e7e5e4"/>
+          <text x="820" y="63" text-anchor="middle" font-size="13">更远的未来目标</text>
+          <path d="M360 76 V110" stroke="#b45309"/>
+          <text x="368" y="104" font-size="11" fill="#b45309">一边回放，一边当 history</text>
+          <rect x="20" y="128" width="300" height="52" fill="#fff1f2" stroke="#be123c"/>
+          <text x="170" y="150" text-anchor="middle" font-size="12" fill="#be123c">触发：新文本 / 新路点</text>
+          <text x="170" y="168" text-anchor="middle" font-size="11" fill="#57534e">或 buffer 快播完</text>
+          <path d="M324 154 H400" stroke="#be123c"/><polygon points="400,150 408,154 400,158" fill="#be123c"/>
+          <rect x="412" y="128" width="548" height="52" fill="#e7f1f0" stroke="#0f4c4a"/>
+          <text x="686" y="150" text-anchor="middle" font-size="12">非阻塞：生成线程用 B + 旧历史出新窗</text>
+          <text x="686" y="168" text-anchor="middle" font-size="11" fill="#57534e">4-step 不需要 B · 10-step 用 1 帧 B 藏 63 ms</text>
+        </svg>
+        <p class="caption">图 8 · 论文 Fig.5。root 先平移到原点再预测，再加回场景坐标。历史与窗外目标用截断滑窗，训练见过的最长上下文是 8s。</p>
+      </div>
+      <div class="grid-3" style="margin-top:10px">
+        <div class="card"><h3>4-step</h3><p>RTX 4090 平均 <strong>33 ms</strong>，无需 buffer，20 fps 生成窗 40 帧。</p></div>
+        <div class="card"><h3>10-step</h3><p>63 ms，控制更准，用 1 帧 buffer 把延迟藏起来。</p></div>
+        <div class="card"><h3>键鼠</h3><p>鼠标路点插值平滑成轨迹；键盘速度积分出 root 轨迹再喂模型。</p></div>
+      </div>
+    </section>
+
+    <!-- 15 消融表 + 柱状图 -->
+    <section class="slide">
+      <div class="kicker">实验 · 消融</div>
+      <h2>Bones Rigplay：拆分是否成立（Table 2）</h2>
+      <p class="small" style="margin-top:0;margin-bottom:8px">约 700h、150+ 演员、27 关节统一骨架；按语义切分，测试类训练未见。R-prec 在约 5k 类上算，比 HumanML3D batch-32 难。</p>
+      <div class="cols-63">
+        <table>
+          <thead>
+            <tr><th>模型</th><th>R-prec ↑</th><th>FID ↓</th><th>关节 pos ↓</th><th>路点 ↓</th></tr>
+          </thead>
+          <tbody>
+            <tr class="hi"><td>ARDY</td><td class="num">65.47</td><td class="num">0.027</td><td class="num">0.025</td><td class="num">0.024</td></tr>
+            <tr><td>纯显式表征</td><td class="num">53.90</td><td class="num">0.065</td><td class="num">0.130</td><td class="num">0.203</td></tr>
+            <tr><td>解码器不转本地 root</td><td class="num">64.94</td><td class="num">0.028</td><td class="num">0.048</td><td class="num">0.060</td></tr>
+            <tr><td>单阶段去噪</td><td class="num">65.84</td><td class="num">0.029</td><td class="num">0.101</td><td class="num">0.164</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p class="legend"><span><i class="dot" style="background:#0f4c4a"></i>路点误差 (m) ↓</span></p>
+          <div class="bars">
+            <div class="bar-row"><span>ARDY</span><div class="bar-track"><div class="bar-fill" style="width:12%"></div></div><span class="bar-val">0.024</span></div>
+            <div class="bar-row"><span>本地 root 关</span><div class="bar-track"><div class="bar-fill alt" style="width:30%"></div></div><span class="bar-val">0.060</span></div>
+            <div class="bar-row"><span>单阶段</span><div class="bar-track"><div class="bar-fill warn" style="width:81%"></div></div><span class="bar-val">0.164</span></div>
+            <div class="bar-row"><span>纯显式</span><div class="bar-track"><div class="bar-fill warn" style="width:100%"></div></div><span class="bar-val">0.203</span></div>
+          </div>
+          <p class="small">读图：hybrid 主要抬语义和质量；两阶段主要抬控制。单阶段 R-prec 甚至略高，但路点崩了。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16 超参表 -->
+    <section class="slide">
+      <div class="kicker">实验 · 超参</div>
+      <h2>Horizon 与扩散步数（Table 3 节选）</h2>
+      <div class="cols">
+        <div>
+          <table>
+            <thead><tr><th>Horizon</th><th>R-prec</th><th>FID</th><th>路点</th><th>备注</th></tr></thead>
+            <tbody>
+              <tr><td class="num">4</td><td class="num">33.42</td><td class="num">0.224</td><td class="num">0.850</td><td class="no">漂、不跟文本</td></tr>
+              <tr><td class="num">8</td><td class="num">56.70</td><td class="num">0.037</td><td class="num">0.020</td><td>改 prompt 更跟手</td></tr>
+              <tr class="hi"><td class="num">40*</td><td class="num">65.47</td><td class="num">0.027</td><td class="num">0.024</td><td>默认，质量最好</td></tr>
+            </tbody>
+          </table>
+          <p class="small">生成窗太短会训崩。8 帧与 40 帧都是可用工作点：一个跟手，一个质量。</p>
+        </div>
+        <div>
+          <table>
+            <thead><tr><th>Steps</th><th>R-prec</th><th>关节 rot°</th><th>路点</th></tr></thead>
+            <tbody>
+              <tr><td class="num">1–2</td><td class="num">56–61</td><td class="num">25–8</td><td class="no">崩</td></tr>
+              <tr><td class="num">4</td><td class="num">64.41</td><td class="num">2.68</td><td class="num">0.027</td></tr>
+              <tr class="hi"><td class="num">10*</td><td class="num">65.47</td><td class="num">2.23</td><td class="num">0.024</td></tr>
+              <tr><td class="num">100</td><td class="num">65.49</td><td class="num">2.71</td><td class="num">0.028</td></tr>
+            </tbody>
+          </table>
+          <p class="small">4-step 已接近 10-step。再加到 100 几乎不赚，还更慢。交互默认 4，要精度用 10。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17 HumanML3D 离线对比 -->
+    <section class="slide">
+      <div class="kicker">实验 · HumanML3D 离线</div>
+      <h2>对 MaskControl：少优化也能把关节误差打下来</h2>
+      <div class="cols">
+        <table>
+          <thead>
+            <tr><th>方法</th><th>R-prec ↑</th><th>FID ↓</th><th>误差 cm ↓</th><th>延迟 s ↓</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>MaskControl*</td><td class="num">0.760</td><td class="num">0.050</td><td class="num">46.18</td><td class="num">0.46</td></tr>
+            <tr class="hi"><td>ARDY*</td><td class="num">0.729</td><td class="num">0.044</td><td class="num">4.15</td><td class="num">0.15</td></tr>
+            <tr><td>MaskControl + opt</td><td class="num">0.758</td><td class="num">0.047</td><td class="num">0.45</td><td class="num">68.65</td></tr>
+            <tr><td>ARDY + opt</td><td class="num">0.721</td><td class="num">0.088</td><td class="num">0.30</td><td class="num">9.25</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p class="legend"><span><i class="dot" style="background:#0f4c4a"></i>无优化关节误差 (cm)</span></p>
+          <div class="bars">
+            <div class="bar-row"><span>ARDY*</span><div class="bar-track"><div class="bar-fill" style="width:9%"></div></div><span class="bar-val">4.15</span></div>
+            <div class="bar-row"><span>MaskControl*</span><div class="bar-track"><div class="bar-fill warn" style="width:100%"></div></div><span class="bar-val">46.18</span></div>
+          </div>
+          <p class="small" style="margin-top:12px">* 表示关掉测试时优化。公开集实验用 vanilla AE，隔离私有 Bones 数据。评测器仍在原 HumanML3D 预处理上训，作者认为自己略吃亏。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 18 在线对比 -->
+    <section class="slide">
+      <div class="kicker">实验 · HumanML3D 在线</div>
+      <h2>对 DiP：窗口外目标不再崩</h2>
+      <div class="cols">
+        <table>
+          <thead>
+            <tr><th>设定</th><th>方法</th><th>R-prec</th><th>FID</th><th>误差 cm</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>窗内目标</td><td>DiP</td><td class="num">0.609</td><td class="num">0.967</td><td class="num">9.20</td></tr>
+            <tr class="hi"><td>窗内目标</td><td>ARDY</td><td class="num">0.690</td><td class="num">0.092</td><td class="num">2.48</td></tr>
+            <tr><td>窗外目标</td><td>DiP</td><td class="num">0.599</td><td class="num">1.453</td><td class="num">17.64</td></tr>
+            <tr class="hi"><td>窗外目标</td><td>ARDY</td><td class="num">0.684</td><td class="num">0.100</td><td class="num">2.92</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p class="legend">
+            <span><i class="dot" style="background:#9a3412"></i>DiP</span>
+            <span><i class="dot" style="background:#0f4c4a"></i>ARDY</span>
+            关节误差 cm ↓
+          </p>
+          <div class="bars">
+            <div class="bar-row"><span>窗内 DiP</span><div class="bar-track"><div class="bar-fill warn" style="width:52%"></div></div><span class="bar-val">9.20</span></div>
+            <div class="bar-row"><span>窗内 ARDY</span><div class="bar-track"><div class="bar-fill" style="width:14%"></div></div><span class="bar-val">2.48</span></div>
+            <div class="bar-row"><span>窗外 DiP</span><div class="bar-track"><div class="bar-fill warn" style="width:100%"></div></div><span class="bar-val">17.64</span></div>
+            <div class="bar-row"><span>窗外 ARDY</span><div class="bar-track"><div class="bar-fill" style="width:17%"></div></div><span class="bar-val">2.92</span></div>
+          </div>
+          <p class="small">人评 240 对（Table 6）：质量 65.8 / 平 25.0 / DiP 9.2。语义与目标精度同样一边倒。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 19 局限 -->
+    <section class="slide">
+      <div class="kicker">讨论</div>
+      <h2>局限：记忆、步数、物理都还没合进去</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3>扁平历史</h3>
+          <p>过去帧整段喂进 Transformer。超长任务不经济。作者点名结构化记忆 / 更新机制。</p>
+        </div>
+        <div class="card">
+          <h3>仍是多步扩散</h3>
+          <p>4-step 已可用，但还能叠 shortcut / consistency。延迟和步数还是绑在一起。</p>
+        </div>
+        <div class="card">
+          <h3>纯运动学</h3>
+          <p>没有动力学。滑步、抖动仍在。下一步想统一预测运动学 + 动力学，服务物理关键场景。</p>
+        </div>
+      </div>
+      <p class="small">Bones 是私有棚拍数据，公开复现会落在 HumanML3D 那套 vanilla AE 设定上，和 demo 的 FSQ 700h 模型不是同一个。</p>
+    </section>
+
+    <!-- 20 带走 -->
+    <section class="slide">
+      <div class="kicker">带走</div>
+      <h2>四条可以写进自己系统的判断</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>1 · 先问谁必须 overwrite</h3>
+          <p>全局轨迹、必须钉死的关节，显式留着并允许覆盖。其余高维身体进 tokenizer。全显式少步扩散学不动，全隐式又盖不了场景坐标约束。</p>
+        </div>
+        <div class="card">
+          <h3>2 · 控制写进训练，别后挂</h3>
+          <p>从 GT 采样约束当条件，比测试时优化 / 再训 RL 更适合交互。窗口外目标当成额外 token，比把生成窗拉到 10s 便宜。</p>
+        </div>
+        <div class="card">
+          <h3>3 · 短生成、长条件</h3>
+          <p>生成窗保持 2s 保证跟手；历史 8s 扛复杂语义；未来 10s 扛长程路点。质量和反应速度用 horizon 做对换（40 vs 8）。</p>
+        </div>
+        <div class="card">
+          <h3>4 · 两阶段买的是控制</h3>
+          <p>消融里 R-prec 几乎不涨，路点误差差一个数量级。先出干净 root 再出 body，是「又要文本又要钉点」时的结构假设。</p>
+        </div>
+      </div>
+      <p class="small">完整笔记见本周 <code>paper_.md</code> 的 ARDY 条目。本页可直接投屏汇报。</p>
+    </section>
+
+  </div>
+  <div class="footer">
+    <span>ARDY · Paper Weekly · 2026-08-17 ~ 08-23</span>
+    <span id="counter">1 / 1</span>
+  </div>
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const bar = document.getElementById("bar");
+    const counter = document.getElementById("counter");
+    let i = 0;
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach((s, k) => s.classList.toggle("active", k === i));
+      bar.style.width = ((i + 1) / slides.length * 100) + "%";
+      counter.textContent = (i + 1) + " / " + slides.length;
+    }
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+      if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+      if (e.key === "Home") show(0);
+      if (e.key === "End") show(slides.length - 1);
+    });
+    document.body.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      show(e.clientX > innerWidth * 0.28 ? i + 1 : i - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>
